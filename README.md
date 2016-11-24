@@ -14,7 +14,7 @@ import autoreload from 'views-auto-reload'
 let app = express()
 
 app.set('views', path.join(__dirname, 'views'))  //set you own view path
-app.set('view engine', 'jade')  //set you own view path
+app.set('view engine', 'jade')  //set you own view engine
 
 app.use(autoreload(app, {suffix: ['.jade']}))
 
