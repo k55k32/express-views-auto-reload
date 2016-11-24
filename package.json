@@ -1,0 +1,28 @@
+{
+  "name": "views-auto-relaod",
+  "version": "1.0.0",
+  "description": "a express middleware that can auto reflush your web page when the files changed",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/k55k32/express-views-auto-reload.git"
+  },
+  "keywords": [
+    "auto-realod",
+    "auto-reflush",
+    "express-auto-reflush"
+  ],
+  "author": "diamond zhou",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/k55k32/express-views-auto-reload/issues"
+  },
+  "homepage": "https://github.com/k55k32/express-views-auto-reload#readme",
+  "dependencies": {
+    "node-watch": "^0.4.1",
+    "ws": "^1.1.1"
+  }
+}
