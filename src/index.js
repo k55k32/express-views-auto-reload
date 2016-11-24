@@ -6,6 +6,7 @@ let currentVersion  = new Date().getTime()
 
 function scriptTemplate (host, port) {
   let functionName = `initWebsocket${currentVersion}`
+  console.log(`the init function is ${functionName}`)
   return
   `<script>
     function ${functionName}() {
@@ -36,6 +37,7 @@ function sendToAll() {
 
 function createWs(port) {
   const wsServer = ws.Server({ port: port })
+  console.log('open webservice success port:', port)
   wsServer.on('connection', ws => {
     clients.push(ws)
     ws.send(currentVersion)
@@ -58,7 +60,6 @@ export default ({port, app, watchs = [], host = 'localhost'}) => {
         })
     })
   }
-
   return (req, res, next) => {
     res.render = (path, options, done) => {
       app.render(path,
