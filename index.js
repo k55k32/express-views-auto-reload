@@ -1,74 +1,80 @@
-import ws from 'ws'
-import watch from 'node-watch'
+'use strict';
 
-let clients = []
-let currentVersion  = new Date().getTime()
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-function jsTemp (host, port) {
-  let functionName = `initWebsocket${currentVersion}`
-  return
-  `<script>
-    function ${functionName}() {
-      var ws = new window.WebSocket('ws://${host}:${port}')
-      var storeKey = "auto_reload_current_version"
-      ws.onmessage = ({ data }) => {
-        var currentVersion = data
-        var localVersion = localStorage.getItem(storeKey)
-        if (currentVersion !== localVersion) {
-          localStorage.setItem(storeKey, currentVersion)
-          location.reload()
-        }
-      }
-      ws.onclose = () => {
-        setTimeout(() => { ${functionName}() }, 300)
-      }
-    }
-    ${functionName}()
-  </script>
-  `
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _ws = require('ws');
+
+var _ws2 = _interopRequireDefault(_ws);
+
+var _nodeWatch = require('node-watch');
+
+var _nodeWatch2 = _interopRequireDefault(_nodeWatch);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var clients = [];
+var currentVersion = new Date().getTime();
+
+function scriptTemplate(host, port) {
+  var functionName = 'initWebsocket' + currentVersion;
+  return;
+  '<script>\n    function ' + functionName + '() {\n      var ws = new window.WebSocket(\'ws://' + host + ':' + port + '\')\n      var storeKey = "auto_reload_current_version"\n      ws.onmessage = ({ data }) => {\n        var currentVersion = data\n        var localVersion = localStorage.getItem(storeKey)\n        if (currentVersion !== localVersion) {\n          localStorage.setItem(storeKey, currentVersion)\n          location.reload()\n        }\n      }\n      ws.onclose = () => {\n        setTimeout(() => { ' + functionName + '() }, 300)\n      }\n    }\n    ' + functionName + '()\n  </script>\n  ';
 }
 
 function sendToAll() {
-  clients.forEach(ws => {
-    if (ws.readyState === 1) ws.send(currentVersion)
-  })
+  clients.forEach(function (ws) {
+    if (ws.readyState === 1) ws.send(currentVersion);
+  });
 }
 
 function createWs(port) {
-  const wsServer = ws.Server({ port: port })
-  wsServer.on('connection', ws => {
-    clients.push(ws)
-    ws.send(currentVersion)
-    ws.on('close', () => {
-      clients.splice(clients.findIndex(item => item === ws), 1)
-    })
-  })
+  var wsServer = _ws2.default.Server({ port: port });
+  wsServer.on('connection', function (ws) {
+    clients.push(ws);
+    ws.send(currentVersion);
+    ws.on('close', function () {
+      clients.splice(clients.findIndex(function (item) {
+        return item === ws;
+      }), 1);
+    });
+  });
 }
 
-export default ({port, app, watchs = [], host = 'localhost'}) => {
-  createWs(port)
+exports.default = function (_ref) {
+  var port = _ref.port,
+      app = _ref.app,
+      _ref$watchs = _ref.watchs,
+      watchs = _ref$watchs === undefined ? [] : _ref$watchs,
+      _ref$host = _ref.host,
+      host = _ref$host === undefined ? 'localhost' : _ref$host;
+
+  createWs(port);
   if (watchs.length) {
-    watch('./', filename => {
-        watchs.forEach(prefix => {
-          if (filename.endsWith(prefix)) {
-            currentVersion = new Date().getTime()
-            sendToAll()
-            return false
-          }
-        })
-    })
+    (0, _nodeWatch2.default)('./', function (filename) {
+      watchs.forEach(function (prefix) {
+        if (filename.endsWith(prefix)) {
+          currentVersion = new Date().getTime();
+          sendToAll();
+          return false;
+        }
+      });
+    });
   }
 
-  return (req, res, next) => {
-    res.render = (path) => {
-      app.render(path,
-        { locals: app.locals },
-        (err, str) => {
-          let send = str + jsTemp(host, port)
-          res.send(send)
+  return function (req, res, next) {
+    res.render = function (path, options, done) {
+      app.render(path, _extends({ locals: app.locals }, options), function (err, str) {
+        var send = str + scriptTemplate(host, port);
+        if (typeof done === 'function') {
+          done(err, str);
         }
-      )
-    }
-    next()
-  }
-}
+        res.send(send);
+      });
+    };
+    next();
+  };
+};
