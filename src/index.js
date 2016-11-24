@@ -7,8 +7,7 @@ let currentVersion  = new Date().getTime()
 function scriptTemplate (host, port) {
   let functionName = `initWebsocket${currentVersion}`
   console.log(`the init function is ${functionName}`)
-  return
-  `<script>
+  return `<script>
     function ${functionName}() {
       var ws = new window.WebSocket('ws://${host}:${port}')
       var storeKey = "auto_reload_current_version"
