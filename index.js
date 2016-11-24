@@ -22,8 +22,7 @@ var currentVersion = new Date().getTime();
 function scriptTemplate(host, port) {
   var functionName = 'initWebsocket' + currentVersion;
   console.log('the init function is ' + functionName);
-  return;
-  '<script>\n    function ' + functionName + '() {\n      var ws = new window.WebSocket(\'ws://' + host + ':' + port + '\')\n      var storeKey = "auto_reload_current_version"\n      ws.onmessage = ({ data }) => {\n        var currentVersion = data\n        var localVersion = localStorage.getItem(storeKey)\n        if (currentVersion !== localVersion) {\n          localStorage.setItem(storeKey, currentVersion)\n          location.reload()\n        }\n      }\n      ws.onclose = () => {\n        setTimeout(() => { ' + functionName + '() }, 300)\n      }\n    }\n    ' + functionName + '()\n  </script>\n  ';
+  return '<script>\n    function ' + functionName + '() {\n      var ws = new window.WebSocket(\'ws://' + host + ':' + port + '\')\n      var storeKey = "auto_reload_current_version"\n      ws.onmessage = ({ data }) => {\n        var currentVersion = data\n        var localVersion = localStorage.getItem(storeKey)\n        if (currentVersion !== localVersion) {\n          localStorage.setItem(storeKey, currentVersion)\n          location.reload()\n        }\n      }\n      ws.onclose = () => {\n        setTimeout(() => { ' + functionName + '() }, 300)\n      }\n    }\n    ' + functionName + '()\n  </script>\n  ';
 }
 
 function sendToAll() {
