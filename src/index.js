@@ -4,22 +4,30 @@ import watch from 'node-watch'
 let clients = []
 let currentVersion  = new Date().getTime()
 
+function getCurrentVersion () {
+  return currentVersion + ''
+}
+
+function setCurrentVersion() {
+  currentVersion ++
+  return currentVersion + ''
+}
+
 function scriptTemplate (host, port) {
-  let functionName = `initWebsocket${currentVersion}`
-  console.log(`the init function is ${functionName}`)
+  let functionName = `initWebsocket${getCurrentVersion()}`
   return `<script>
     function ${functionName}() {
       var ws = new window.WebSocket('ws://${host}:${port}')
       var storeKey = "auto_reload_current_version"
-      ws.onmessage = ({ data }) => {
-        var currentVersion = data
+      ws.onmessage = function(message) {
+        var currentVersion = message.data
         var localVersion = localStorage.getItem(storeKey)
         if (currentVersion !== localVersion) {
           localStorage.setItem(storeKey, currentVersion)
           location.reload()
         }
       }
-      ws.onclose = () => {
+      ws.onclose = function() {
         setTimeout(() => { ${functionName}() }, 300)
       }
     }
@@ -30,34 +38,36 @@ function scriptTemplate (host, port) {
 
 function sendToAll() {
   clients.forEach(ws => {
-    if (ws.readyState === 1) ws.send(currentVersion)
+    if (ws.readyState === 1) ws.send(getCurrentVersion())
   })
 }
 
 function createWs(port) {
   const wsServer = ws.Server({ port: port })
-  console.log('open webservice success port:', port)
+  console.log('[auto-reload] open websocket port:', port)
   wsServer.on('connection', ws => {
     clients.push(ws)
-    ws.send(currentVersion)
+    ws.send(getCurrentVersion())
     ws.on('close', () => {
       clients.splice(clients.findIndex(item => item === ws), 1)
     })
   })
 }
 
-export default ({port, app, watchs = [], host = 'localhost'}) => {
+export default (app, {dir = process.cwd(),port = 39999, suffix = [], host = 'localhost'}) => {
+  if (!app) throw Error('app can not be null')
   createWs(port)
-  if (watchs.length) {
-    watch('./', filename => {
-        watchs.forEach(prefix => {
-          if (filename.endsWith(prefix)) {
-            currentVersion = new Date().getTime()
-            sendToAll()
-            return false
-          }
-        })
+  if (suffix.length) {
+    watch(dir, filename => {
+      suffix.forEach(s => {
+        if (filename.endsWith(s)) {
+          setCurrentVersion()
+          sendToAll()
+          return false
+        }
+      })
     })
+    console.log('[autu-reload] on those file changed: ', dir, suffix)
   }
   return (req, res, next) => {
     res.render = (path, options, done) => {

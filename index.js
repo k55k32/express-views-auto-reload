@@ -19,24 +19,32 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var clients = [];
 var currentVersion = new Date().getTime();
 
+function getCurrentVersion() {
+  return currentVersion + '';
+}
+
+function setCurrentVersion() {
+  currentVersion++;
+  return currentVersion + '';
+}
+
 function scriptTemplate(host, port) {
-  var functionName = 'initWebsocket' + currentVersion;
-  console.log('the init function is ' + functionName);
-  return '<script>\n    function ' + functionName + '() {\n      var ws = new window.WebSocket(\'ws://' + host + ':' + port + '\')\n      var storeKey = "auto_reload_current_version"\n      ws.onmessage = ({ data }) => {\n        var currentVersion = data\n        var localVersion = localStorage.getItem(storeKey)\n        if (currentVersion !== localVersion) {\n          localStorage.setItem(storeKey, currentVersion)\n          location.reload()\n        }\n      }\n      ws.onclose = () => {\n        setTimeout(() => { ' + functionName + '() }, 300)\n      }\n    }\n    ' + functionName + '()\n  </script>\n  ';
+  var functionName = 'initWebsocket' + getCurrentVersion();
+  return '<script>\n    function ' + functionName + '() {\n      var ws = new window.WebSocket(\'ws://' + host + ':' + port + '\')\n      var storeKey = "auto_reload_current_version"\n      ws.onmessage = function(message) {\n        var currentVersion = message.data\n        var localVersion = localStorage.getItem(storeKey)\n        if (currentVersion !== localVersion) {\n          localStorage.setItem(storeKey, currentVersion)\n          location.reload()\n        }\n      }\n      ws.onclose = function() {\n        setTimeout(() => { ' + functionName + '() }, 300)\n      }\n    }\n    ' + functionName + '()\n  </script>\n  ';
 }
 
 function sendToAll() {
   clients.forEach(function (ws) {
-    if (ws.readyState === 1) ws.send(currentVersion);
+    if (ws.readyState === 1) ws.send(getCurrentVersion());
   });
 }
 
 function createWs(port) {
   var wsServer = _ws2.default.Server({ port: port });
-  console.log('open webservice success port:', port);
+  console.log('[auto-reload] open websocket port:', port);
   wsServer.on('connection', function (ws) {
     clients.push(ws);
-    ws.send(currentVersion);
+    ws.send(getCurrentVersion());
     ws.on('close', function () {
       clients.splice(clients.findIndex(function (item) {
         return item === ws;
@@ -45,25 +53,29 @@ function createWs(port) {
   });
 }
 
-exports.default = function (_ref) {
-  var port = _ref.port,
-      app = _ref.app,
-      _ref$watchs = _ref.watchs,
-      watchs = _ref$watchs === undefined ? [] : _ref$watchs,
+exports.default = function (app, _ref) {
+  var _ref$dir = _ref.dir,
+      dir = _ref$dir === undefined ? process.cwd() : _ref$dir,
+      _ref$port = _ref.port,
+      port = _ref$port === undefined ? 39999 : _ref$port,
+      _ref$suffix = _ref.suffix,
+      suffix = _ref$suffix === undefined ? [] : _ref$suffix,
       _ref$host = _ref.host,
       host = _ref$host === undefined ? 'localhost' : _ref$host;
 
+  if (!app) throw Error('app can not be null');
   createWs(port);
-  if (watchs.length) {
-    (0, _nodeWatch2.default)('./', function (filename) {
-      watchs.forEach(function (prefix) {
-        if (filename.endsWith(prefix)) {
-          currentVersion = new Date().getTime();
+  if (suffix.length) {
+    (0, _nodeWatch2.default)(dir, function (filename) {
+      suffix.forEach(function (s) {
+        if (filename.endsWith(s)) {
+          setCurrentVersion();
           sendToAll();
           return false;
         }
       });
     });
+    console.log('[autu-reload] on those file changed: ', dir, suffix);
   }
   return function (req, res, next) {
     res.render = function (path, options, done) {
