@@ -16,15 +16,16 @@ function setCurrentVersion() {
 function scriptTemplate (host, port) {
   let functionName = `initWebsocket${getCurrentVersion()}`
   return `<script>
+    var historyVersion = null;
     function ${functionName}() {
       var ws = new window.WebSocket('ws://${host}:${port}')
       var storeKey = "auto_reload_current_version"
       ws.onmessage = function(message) {
         var currentVersion = message.data
-        var localVersion = localStorage.getItem(storeKey)
-        if (currentVersion !== localVersion) {
-          localStorage.setItem(storeKey, currentVersion)
+        if (historyVersion && historyVersion != currentVersion) {
           location.reload()
+        } else {
+          historyVersion = currentVersion
         }
       }
       ws.onclose = function() {
